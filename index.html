@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<head>
+  <title>Belajar Leaflet</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <!-- Load Library Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Load Plugin leaflet.ajax -->
+  <script src="leaflet.ajax.js"></script>
+
+  <!-- Load Plugin Legenda -->
+  <script src="https://cdn.jsdelivr.net/gh/stefanocudini/leaflet-panel-layers/src/leaflet-panel-layers.js"></script>
+
+  <!-- Masukan Bootsrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <style>
+    #map {
+      height: 100vh;
+    }
+
+    /* Membuat Dark Mode */
+    .leaflet-tile {
+      filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+    }
+
+    /* Mengubah backgroun Pop Up Biru */
+    .custom-popup .leaflet-popup-content-wrapper {
+      background-color: rgb(62, 62, 170) !important;
+      color: white !important;
+      border-radius: 5px;
+      padding: 5px;
+    }
+
+    /* Membuat Teks Judul */
+    .spatial-data-text {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background-color: rgba(42, 8, 128, 0);
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 18px;
+      font-weight: bold;
+      z-index: 1000; /* Pastikan teks berada di atas peta */
+      line-height: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- Teks Spatial Data Improvement Pacitan di pojok kiri bawah -->
+  <div class="spatial-data-text">Project Digitasi Tutupan Lahan <br />Kabupaten Klungkung Bali</div>
+
+  <script>
+    var map = L.map("map").setView([-8.6638365, 115.502025841424], 11);
+    var openStreetMap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors",
+    });
+    openStreetMap.addTo(map);
+
+    // ngecek ntar dihapus
+    var myStyle = {
+      color: "yellow",
+      weight: 2,
+      opacity: 0.3,
+    };
+
+    var myStyle2 = {
+      color: "red",
+      weight: 5,
+    };
+
+    // Fungsi untuk menentukan warna simbol tanpa kelas tertentu
+    function getColor1(anomaly) {
+      return anomaly ? "green" : "green"; // Ganti defaultColor dengan warna default yang diinginkan
+    }
+
+    function getColorCatatan(Catatan) {
+      return Catatan ? "orange" : "orange"; // Ganti defaultColor dengan warna default yang diinginkan
+    }
+
+    function getColorCatatan2(Catatan) {
+      return Catatan ? "red" : "red"; // Ganti defaultColor dengan warna default yang diinginkan
+    }
+
+    function getColorCatatan3(Catatan) {
+      return Catatan ? "blue" : "blue"; // Ganti defaultColor dengan warna default yang diinginkan
+    }
+
+    function styleFeatureCatatan1(feature) {
+      return {
+        color: getColor1(feature.properties.Catatan),
+        weight: 3,
+        opacity: 1,
+      };
+    }
+
+    function styleFeatureCatatan(feature) {
+      return {
+        color: getColorCatatan(feature.properties.Catatan),
+        weight: 1,
+        opacity: 0.3,
+      };
+    }
+
+    function styleFeatureCatatan2(feature) {
+      return {
+        color: getColorCatatan2(feature.properties.Catatan),
+        weight: 2,
+        opacity: 1,
+      };
+    }
+
+    function styleFeatureCatatan3(feature) {
+      return {
+        color: getColorCatatan3(feature.properties.Catatan),
+        weight: 2,
+        opacity: 0.8,
+      };
+    }
+
+    //  Akhiri SImbologi
+
+    // Menampilkan Pop Up
+    function popUp(feature, layer) {
+      var out = ["<b>Informasi Lokasi:</b>"];
+      if (feature.properties.Keterangan) out.push("Keterangan : " + feature.properties.Keterangan);
+      layer.bindPopup(out.join("<br />"), { className: "custom-popup" });
+    }
+
+    var panelLayers = new L.Control.PanelLayers([], overLayers);
+
+    // Menambahkan  Legenda
+    var legend = L.control({ position: "bottomright" });
+    legend.onAdd = function (map) {
+      var div = L.DomUtil.create("div", "info legend");
+      div.style.color = "white";
+      div.style.background = "rgba(0, 0, 0, 0.5)";
+      div.style.padding = "5px";
+      div.style.borderRadius = "5px";
+      div.style.textAlign = "left";
+
+      div.innerHTML += "<strong style='display: block; text-align: center;'>Legenda</strong><br>";
+
+      var categories = [
+        { label: "Jalan (1.50%)", color: "red" },
+        { label: "Tutupan lahan lainnya (73.75%)", color: "orange" },
+        { label: "Kawasan Pertanian (17.95%)", color: "green" },
+        { label: "Sungai (6.80%)", color: "blue" },
+      ];
+      div.innerHTML += "<strong style='display: block; text-align: center;'>Total AOI 31,778 Ha</strong><br>";
+
+      categories.forEach(function (cat) {
+        div.innerHTML += '<i style="background:' + cat.color + '; width: 12px; height: 12px; display: inline-block; margin-right: 5px;"></i>' + cat.label + "<br>";
+      });
+
+      return div;
+    };
+
+    legend.addTo(map);
+
+    // Tombol interaktif untuk mengaktifkan/mematikan layer tanpa mengubah tampilan peta
+    var afterLayer = new L.GeoJSON.AJAX("GeoJSON/Kawasan_Lainnya_Klungkung.geojson", {
+      onEachFeature: popUp,
+      style: styleFeatureCatatan,
+    });
+
+    var beforeLayer = new L.GeoJSON.AJAX("GeoJSON/Kawasan_Pertanian_Klungkung.geojson", {
+      onEachFeature: popUp,
+      style: styleFeatureCatatan1,
+    });
+
+    var beforeLayer2 = new L.GeoJSON.AJAX("GeoJSON/Jalan_klungkung.geojson", {
+      onEachFeature: popUp,
+      style: styleFeatureCatatan2,
+    });
+
+    var afterLayer2 = new L.GeoJSON.AJAX("GeoJSON/Sungai_klungkung.geojson", {
+      onEachFeature: popUp,
+      style: styleFeatureCatatan3,
+    });
+
+    var overLayers = [
+      { name: "Kawasan Lainnya", layer: afterLayer },
+      { name: "Kawasan Pertanian", layer: beforeLayer },
+      { name: "Sungai", layer: afterLayer2 },
+      { name: "Jalan", layer: beforeLayer2 },
+    ];
+
+    afterLayer.addTo(map);
+    beforeLayer.addTo(map);
+    afterLayer2.addTo(map);
+    beforeLayer2.addTo(map);
+
+    var panelLayers = new L.Control.PanelLayers([], overLayers);
+
+    var controlContainer = L.control({ position: "topright" });
+    controlContainer.onAdd = function (map) {
+      var container = L.DomUtil.create("div", "layer-control");
+      container.style.background = "rgba(0, 0, 0, 0.7)";
+      container.style.padding = "10px";
+      container.style.borderRadius = "5px";
+      container.style.color = "white";
+      container.style.textAlign = "center";
+
+      container.innerHTML += "<strong>Layer Control</strong><br><br>";
+
+      var btnBefore = document.createElement("button");
+      btnBefore.innerHTML = "Kawasan Pertanian";
+      btnBefore.style.display = "block";
+      btnBefore.style.marginBottom = "5px";
+      btnBefore.style.padding = "5px";
+      btnBefore.style.border = "none";
+      btnBefore.style.borderRadius = "5px";
+      btnBefore.style.cursor = "pointer";
+      btnBefore.style.background = "green";
+      btnBefore.style.color = "white";
+
+      var btnAfter2 = document.createElement("button");
+      btnAfter2.innerHTML = "Tampilkan Sungai";
+      btnAfter2.style.display = "block";
+      btnAfter2.style.marginBottom = "5px";
+      btnAfter2.style.padding = "4px";
+      btnAfter2.style.border = "none";
+      btnAfter2.style.borderRadius = "5px";
+      btnAfter2.style.cursor = "pointer";
+      btnAfter2.style.background = "blue";
+      btnAfter2.style.color = "white";
+
+      var btnAfter = document.createElement("button");
+      btnAfter.innerHTML = "Kawasan Lainnya";
+      btnAfter.style.display = "block";
+      btnAfter.style.marginBottom = "4px";
+      btnAfter.style.padding = "5px";
+      btnAfter.style.border = "none";
+      btnAfter.style.borderRadius = "5px";
+      btnAfter.style.cursor = "pointer";
+      btnAfter.style.background = "orange";
+      btnAfter.style.color = "white";
+
+      var btnBefore2 = document.createElement("button");
+      btnBefore2.innerHTML = "Tampilkan Jalan";
+      btnBefore2.style.display = "block";
+      btnBefore2.style.marginBottom = "5px";
+      btnBefore2.style.padding = "5px";
+      btnBefore2.style.border = "none";
+      btnBefore2.style.borderRadius = "5px";
+      btnBefore2.style.cursor = "pointer";
+      btnBefore2.style.background = "red";
+      btnBefore2.style.color = "white";
+
+      btnBefore.onclick = function () {
+        if (map.hasLayer(beforeLayer)) {
+          map.removeLayer(beforeLayer);
+          btnBefore.style.background = "#555";
+        } else {
+          map.addLayer(beforeLayer);
+          btnBefore.style.background = "#007bff";
+        }
+      };
+
+      btnAfter.onclick = function () {
+        if (map.hasLayer(afterLayer)) {
+          map.removeLayer(afterLayer);
+          btnAfter.style.background = "#555";
+        } else {
+          map.addLayer(afterLayer);
+          btnAfter.style.background = "#28a745";
+        }
+      };
+
+      btnBefore2.onclick = function () {
+        if (map.hasLayer(beforeLayer2)) {
+          map.removeLayer(beforeLayer2);
+          btnBefore2.style.background = "#555";
+        } else {
+          map.addLayer(beforeLayer2);
+          btnBefore2.style.background = "#007bff";
+        }
+      };
+
+      btnAfter2.onclick = function () {
+        if (map.hasLayer(afterLayer2)) {
+          map.removeLayer(afterLayer2);
+          btnAfter2.style.background = "#555";
+        } else {
+          map.addLayer(afterLayer2);
+          btnAfter2.style.background = "#28a745";
+        }
+      };
+
+      container.appendChild(btnBefore);
+      container.appendChild(btnAfter2);
+      container.appendChild(btnAfter);
+      container.appendChild(btnBefore2);
+
+      return container;
+    };
+    controlContainer.addTo(map);
+  </script>
+</body>
